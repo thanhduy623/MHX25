@@ -1,5 +1,6 @@
+// muster.js
 import { fetchGoogleSheet } from './connect.js';
-import { startBarcodeScanner } from './barcode-cam.js'; // Giả định barcode-cam.js cung cấp hàm startBarcodeScanner
+import { startBarcodeScanner } from './barcode-cam.js';
 
 const eventSelect = document.getElementById('event-select');
 const studentIdInput = document.getElementById('student-id');
@@ -11,25 +12,27 @@ const passCodeInput = document.getElementById("pass-code");
 const addBarcodeBtn = document.getElementById('add-barcode-btn');
 
 // --- CÁC PHẦN TỬ MỚI CHO HỘP THOẠI XÁC NHẬN / THÔNG BÁO ---
-const barcodeScannerContainer = document.getElementById('barcode-scanner-container'); // Container chứa khung quét camera
-const scannedResultDisplay = document.getElementById('scanned-result-display'); // Nơi hiển thị MSSV đã quét
-const confirmScanBtn = document.getElementById('confirm-scan-btn'); // Nút xác nhận MSSV
-const cancelScanBtn = document.getElementById('cancel-scan-btn'); // Nút hủy MSSV / tiếp tục quét
-const closeScannerBtn = document.getElementById('close-scanner-btn'); // Nút đóng hẳn khung quét camera
+const barcodeScannerContainer = document.getElementById('barcode-scanner-container');
+const scannedResultDisplay = document.getElementById('scanned-result-display');
+const confirmScanBtn = document.getElementById('confirm-scan-btn');
+const cancelScanBtn = document.getElementById('cancel-scan-btn');
+const closeScannerBtn = document.getElementById('close-scanner-btn');
 
-const customMessageBox = document.getElementById('custom-message-box'); // Hộp thông báo tùy chỉnh
-const customMessageText = document.getElementById('custom-message-text'); // Nội dung thông báo
-const customMessageOkBtn = document.getElementById('custom-message-ok-btn'); // Nút OK cho thông báo
+const customMessageBox = document.getElementById('custom-message-box');
+const customMessageText = document.getElementById('custom-message-text');
+const customMessageOkBtn = document.getElementById('custom-message-ok-btn');
 // -------------------------------------------------------------
 
 let studentList = [];
 let studentDataMap = {};
 const STORAGE_KEY = 'muster_student_list';
 
-let urlGAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhpPPJtecQ/exec"; // Đã sửa urlGAS
+let urlGAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhpPPJtecQ/exec";
 
 // Biến lưu trữ hàm để dừng máy quét hiện tại từ thư viện barcode-cam
 let stopCurrentScannerFunction = null;
+// Biến lưu trữ đối tượng Html5Qrcode instance để điều khiển pause/resume
+let html5QrCodeInstance = null;
 // Biến lưu trữ MSSV vừa quét được, chờ xử lý
 let pendingScannedMssv = null;
 
@@ -134,86 +137,88 @@ function addStudent() {
  */
 function showCustomMessageBox(message, onOk = () => {}) {
     customMessageText.textContent = message;
-    customMessageBox.style.display = 'flex'; // Sử dụng flexbox để căn giữa dễ hơn
+    customMessageBox.style.display = 'flex';
     customMessageOkBtn.onclick = () => {
         customMessageBox.style.display = 'none';
-        onOk(); // Thực thi callback sau khi đóng thông báo
+        onOk();
     };
 }
 
 /**
  * Bắt đầu quá trình quét barcode.
- * Sẽ dừng máy quét khi tìm thấy mã và chờ xác nhận.
+ * Sẽ hiển thị khung camera và chờ mã được quét.
  */
 function startScanningProcess() {
     // Nếu máy quét đang chạy, dừng nó trước khi bắt đầu cái mới
     if (stopCurrentScannerFunction) {
         stopCurrentScannerFunction();
         stopCurrentScannerFunction = null;
+        html5QrCodeInstance = null; // Đảm bảo instance được reset
     }
 
     // Hiển thị khung quét (overlay)
-    barcodeScannerContainer.style.display = 'flex'; // Dùng flexbox
+    barcodeScannerContainer.style.display = 'flex';
     scannedResultDisplay.textContent = 'Đang chờ quét...';
     
-    // Ẩn nút xác nhận, hiển thị nút hủy/đóng
+    // Ẩn nút xác nhận khi mới bắt đầu quét, hiển thị nút hủy/đóng
     confirmScanBtn.style.display = 'none';
-    cancelScanBtn.textContent = 'Hủy / Tiếp tục quét'; // Đổi text để rõ ràng hơn
+    cancelScanBtn.textContent = 'Hủy / Tiếp tục quét';
 
     // Khởi tạo máy quét, truyền callback xử lý khi quét được mã
-    stopCurrentScannerFunction = startBarcodeScanner((scannedText) => {
-        // Hàm này sẽ được gọi mỗi khi có mã được quét
-        pendingScannedMssv = scannedText.trim();
+    const scannerControl = startBarcodeScanner(
+        (scannedText) => {
+            // Hàm này sẽ được gọi mỗi khi có mã được quét
+            pendingScannedMssv = scannedText.trim();
 
-        // Tạm dừng máy quét để chờ xử lý và xác nhận
-        // Chúng ta không gọi stopCallback() ở đây nữa mà để hàm startBarcodeScanner tự quản lý việc pause/resume
-        // Tuy nhiên, để tránh quét liên tục khi hiển thị dialog, ta sẽ điều khiển UI
-        
-        // Hiển thị MSSV đã quét và các nút xác nhận/hủy
-        scannedResultDisplay.textContent = `MSSV đã quét: ${pendingScannedMssv}`;
-        confirmScanBtn.style.display = 'inline-block'; // Hiển thị nút xác nhận
-        cancelScanBtn.textContent = 'Bỏ qua và tiếp tục'; // Đổi text cho nút hủy/tiếp tục
-        
-        // Vô hiệu hóa khả năng quét thêm cho đến khi có phản hồi
-        if (stopCurrentScannerFunction) { // Nếu có hàm dừng được trả về
-            stopCurrentScannerFunction(); // Dừng camera tạm thời
-        }
+            // Tạm dừng máy quét để chờ xử lý và xác nhận
+            if (html5QrCodeInstance && html5QrCodeInstance.isScanning()) { // Dùng isScanning()
+                html5QrCodeInstance.pause(true); // Tạm dừng quét nhưng vẫn giữ camera hoạt động
+            }
 
-        // Kiểm tra định dạng MSSV
-        if (pendingScannedMssv.length !== 8) {
-            showCustomMessageBox(`❌ Mã "${pendingScannedMssv}" không hợp lệ. Vui lòng quét lại.`, () => {
-                pendingScannedMssv = null;
-                if (stopCurrentScannerFunction) {
-                    startScanningProcess(); // Khởi động lại máy quét
-                }
+            // Hiển thị MSSV đã quét và các nút xác nhận/hủy
+            const fullName = studentDataMap[pendingScannedMssv] || "Không rõ tên";
+            scannedResultDisplay.textContent = `MSSV: ${pendingScannedMssv} - ${fullName}`;
+            confirmScanBtn.style.display = 'inline-block';
+            cancelScanBtn.textContent = 'Hủy (tiếp tục quét)';
+
+            // Kiểm tra định dạng MSSV
+            if (pendingScannedMssv.length !== 8) {
+                showCustomMessageBox(`❌ Mã "${pendingScannedMssv}" không hợp lệ. Vui lòng quét lại.`, () => {
+                    pendingScannedMssv = null;
+                    if (html5QrCodeInstance) {
+                        html5QrCodeInstance.resume(); // Tiếp tục quét sau khi thông báo lỗi
+                    } else {
+                        startScanningProcess(); // Nếu instance không còn, khởi động lại hoàn toàn
+                    }
+                });
+                return;
+            }
+
+            // Kiểm tra trùng lặp
+            if (studentList.includes(pendingScannedMssv)) {
+                showCustomMessageBox(`⚠️ MSSV ${pendingScannedMssv} đã có trong danh sách.`, () => {
+                    pendingScannedMssv = null;
+                    if (html5QrCodeInstance) {
+                        html5QrCodeInstance.resume(); // Tiếp tục quét sau khi thông báo trùng lặp
+                    } else {
+                        startScanningProcess();
+                    }
+                });
+                return;
+            }
+        }, 
+        // Callback cho sự kiện lỗi (ví dụ: không tìm thấy camera)
+        (error, instance) => { // Nhận cả error và instance từ barcode-cam.js
+            console.error("Lỗi khi khởi tạo máy quét:", error);
+            showCustomMessageBox("Không thể khởi động máy quét. Vui lòng kiểm tra quyền truy cập camera.", () => {
+                barcodeScannerContainer.style.display = 'none'; // Đóng khung quét
+                stopCurrentScannerFunction = null;
+                html5QrCodeInstance = null;
             });
-            return;
         }
-
-        // Kiểm tra trùng lặp
-        if (studentList.includes(pendingScannedMssv)) {
-            showCustomMessageBox(`⚠️ MSSV ${pendingScannedMssv} đã có trong danh sách.`, () => {
-                pendingScannedMssv = null;
-                if (stopCurrentScannerFunction) {
-                    startScanningProcess(); // Khởi động lại máy quét
-                }
-            });
-            return;
-        }
-
-        // Nếu mã hợp lệ và chưa có, chờ người dùng xác nhận
-        scannedResultDisplay.textContent = `MSSV: ${pendingScannedMssv} - ${studentDataMap[pendingScannedMssv] || "Không rõ tên"}`;
-        confirmScanBtn.style.display = 'inline-block';
-        cancelScanBtn.textContent = 'Hủy (tiếp tục quét)';
-    }, 
-    // Callback cho sự kiện lỗi (ví dụ: không tìm thấy camera)
-    (error) => {
-        console.error("Lỗi khi khởi tạo máy quét:", error);
-        showCustomMessageBox("Không thể khởi động máy quét. Vui lòng kiểm tra quyền truy cập camera.", () => {
-            barcodeScannerContainer.style.display = 'none'; // Đóng khung quét
-            stopCurrentScannerFunction = null;
-        });
-    });
+    );
+    stopCurrentScannerFunction = scannerControl.stop;
+    html5QrCodeInstance = scannerControl.instance;
 }
 
 /**
@@ -230,10 +235,15 @@ function confirmScannedStudent() {
     renderList();
     showCustomMessageBox(`✅ Đã thêm ${pendingScannedMssv} vào danh sách.`, () => {
         pendingScannedMssv = null; // Xóa mã tạm thời
-        startScanningProcess(); // Bắt đầu quét lại cho lượt tiếp theo
+        // Resume máy quét để tiếp tục quét cho lượt tiếp theo
+        if (html5QrCodeInstance) {
+            html5QrCodeInstance.resume();
+        } else {
+            startScanningProcess(); // Nếu instance không còn, khởi động lại hoàn toàn
+        }
     });
 
-    // Reset hiển thị
+    // Reset hiển thị và ẩn nút xác nhận
     scannedResultDisplay.textContent = 'Đang chờ quét...';
     confirmScanBtn.style.display = 'none';
     cancelScanBtn.textContent = 'Hủy / Tiếp tục quét';
@@ -249,7 +259,11 @@ function cancelScannedStudent() {
     cancelScanBtn.textContent = 'Hủy / Tiếp tục quét'; // Đặt lại text
 
     // Tiếp tục quét ngay lập tức
-    startScanningProcess();
+    if (html5QrCodeInstance) {
+        html5QrCodeInstance.resume();
+    } else {
+        startScanningProcess(); // Nếu instance không còn, khởi động lại hoàn toàn
+    }
 }
 
 /**
@@ -259,6 +273,7 @@ function closeScannerFully() {
     if (stopCurrentScannerFunction) {
         stopCurrentScannerFunction(); // Dừng hoàn toàn máy quét
         stopCurrentScannerFunction = null;
+        html5QrCodeInstance = null; // Reset instance
     }
     barcodeScannerContainer.style.display = 'none'; // Ẩn khung quét
     pendingScannedMssv = null; // Đảm bảo xóa mã tạm thời
@@ -363,9 +378,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         confirmScanBtn.addEventListener("click", confirmScannedStudent);
     }
     if (cancelScanBtn) {
-        cancelScanBtn.addEventListener("click", cancelScannedStudent); // Hủy mã hiện tại và tiếp tục quét
+        cancelScanBtn.addEventListener("click", cancelScannedStudent);
     }
-    if (closeScannerBtn) { // Nút đóng hẳn khung quét
+    if (closeScannerBtn) {
         closeScannerBtn.addEventListener("click", closeScannerFully);
     }
     // Nút customMessageOkBtn đã được gán trong showCustomMessageBox
