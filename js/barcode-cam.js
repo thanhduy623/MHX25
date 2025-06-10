@@ -1,3 +1,5 @@
+// barcode-cam.js
+
 /**
  * Initializes and starts the barcode scanner using the camera.
  * @param {function(string): void} onScanSuccess - Callback when a barcode is successfully scanned, receiving the code as a string.
@@ -18,6 +20,7 @@ export function startBarcodeScanner(onScanSuccess, onError) {
 
     // Ensure the viewport is clear before initializing
     viewportElement.innerHTML = '';
+    // Html5Qrcode is now used as a global variable, provided by the CDN script in the HTML.
     html5QrCode = new Html5Qrcode(scannerViewportId);
 
     const config = {
