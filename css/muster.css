@@ -11,7 +11,7 @@
     background: #fff;
     padding: 25px 30px;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px var(--color-shadow);
     flex: 1;
     min-width: 300px;
 }
@@ -38,7 +38,7 @@ label {
     margin-top: 18px;
     margin-bottom: 5px;
     font-weight: 600;
-    color: var(--color-primary);
+    color: var(--color-text);
 }
 
 input[type="password"],
@@ -47,11 +47,11 @@ select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border);
     margin-bottom: 15px;
     font-size: 1em;
-    color: var(--color-primary);
-    box-shadow: inset 0 1px 3px var(--color-gray);
+    color: var(--color-text);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -59,7 +59,7 @@ input[type="password"]:focus,
 input[type="text"]:focus,
 select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-gray);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     outline: none;
 }
 
@@ -89,7 +89,7 @@ button {
 }
 
 #add-btn:hover {
-    background-color: var(--color-accent);
+    background-color: var(--color-primary);
 }
 
 #add-barcode-btn {
@@ -97,7 +97,7 @@ button {
 }
 
 #add-barcode-btn:hover {
-    background-color: var(--color-accent);
+    background-color: var(--color-primary);
 }
 
 #submit-btn {
@@ -133,15 +133,16 @@ button {
 .student-table td {
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .student-table th {
-    background-color: #f1f1f1;
+    background-color: var(--color-light-gray);
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.9em;
     letter-spacing: 0.5px;
+    color: var(--color-text);
 }
 
 .student-table tbody tr:nth-child(even) {
@@ -165,6 +166,127 @@ button {
     width: 70%;
     word-break: break-word;
 }
+
+/* --- Modal/Scanner Specific Styles --- */
+#barcode-scanner-container,
+#custom-message-box {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    display: none;
+    /* Ẩn theo mặc định, JS sẽ điều khiển display */
+}
+
+#barcode-scanner-container>div,
+#custom-message-box>div {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 25px var(--color-shadow);
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    /* Đảm bảo linh hoạt */
+}
+
+#barcode-scanner-container>div {
+    min-width: 300px;
+    max-width: 500px;
+    /* Loại bỏ height: 80%; để modal thích nghi tốt hơn với nội dung */
+    /* height: 80%; */
+}
+
+#custom-message-box>div {
+    max-width: 400px;
+}
+
+#barcode-scanner-container h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--color-text);
+    font-size: 1.8em;
+}
+
+#barcode-scanner-viewport {
+    width: 100%;
+    max-width: 300px;
+    height: 250px;
+    margin: 20px auto;
+    border: 2px solid var(--color-primary);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+#scanned-result-display {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    min-height: 1.5em;
+    color: var(--color-text);
+}
+
+/* Scanner buttons */
+#barcode-scanner-container .button-group {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#confirm-scan-btn {
+    background-color: var(--color-accent);
+}
+
+#confirm-scan-btn:hover {
+    background-color: #218838;
+}
+
+#cancel-scan-btn {
+    background-color: var(--color-organe);
+}
+
+#cancel-scan-btn:hover {
+    background-color: #c82333;
+}
+
+/* Các quy tắc cho #close-scanner-btn đã bị xóa */
+
+
+/* Custom Message Box styles */
+#custom-message-text {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+    color: var(--color-text);
+    line-height: 1.5;
+}
+
+#custom-message-ok-btn {
+    padding: 12px 30px;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+#custom-message-ok-btn:hover {
+    background-color: var(--color-secondary);
+}
+
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
@@ -213,6 +335,7 @@ button {
         padding: 15px;
     }
 
+    input[type="password"],
     input[type="text"],
     select {
         padding: 10px;
@@ -222,5 +345,15 @@ button {
     button {
         padding: 10px 15px;
         font-size: 0.9em;
+    }
+
+    /* Adjust modal padding for smaller screens */
+    #barcode-scanner-container>div,
+    #custom-message-box>div {
+        padding: 20px;
+    }
+
+    #barcode-scanner-viewport {
+        height: 200px;
     }
 }
