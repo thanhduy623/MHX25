@@ -1,0 +1,10 @@
+.title {
+    color: var(--color-organe);
+    font-size: 24px;
+    font-weight: bolder;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+}

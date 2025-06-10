@@ -1,0 +1,11 @@
+#header {
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo {
+    width: 42px;
+    height: 42px;
+}

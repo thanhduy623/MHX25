@@ -1,0 +1,24 @@
+@import url(color.css);
+
+#footer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 16px;
+}
+
+/* Logo giữ nguyên kích thước */
+#info-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+/* Hai nhóm info chia đều phần còn lại */
+.info-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>MÙA HÈ XANH 2025 - CNTT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/muster.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+
+<body>
+    <div id="header">
+        <img class="logo" src="/image/logo_TDTU.png" alt="Logo TDTU" />
+        <img class="logo" src="/image/logo_Doan.png" alt="Logo Đoàn" />
+        <div class="title">CỔNG THÔNG TIN MÙA HÈ XANH 2025</div>
+    </div>
+
+    <!-- NỘI DUNG CHÍNH -->
+    <div id="container" style="display: flex; flex-wrap: wrap; gap: 24px;">
+        <div class="form-section">
+            <h2>📋 Đăng ký sự kiện</h2>
+
+            <label for="event-select">Danh sách sự kiện:</label>
+            <select id="event-select">
+                <option value="" hidden>-- Chọn sự kiện --</option>
+            </select>
+
+            <label for="pass-code">Mã quản trị bảo mật:</label>
+            <input type="password" id="pass-code" placeholder="Nhập passcode của admin" />
+
+            <label for="student-id">Mã số sinh viên:</label>
+            <input type="text" id="student-id" placeholder="Nhập MSSV" />
+
+            <div class="button-group">
+                <button id="add-btn">➕ Thêm sinh viên</button>
+                <button id="add-barcode-btn">➕ Quét mã vạch</button>
+                <button id="submit-btn">📤 Gửi dữ liệu</button>
+                <button id="clear-btn">🗑️ Xóa dữ liệu</button>
+            </div>
+        </div>
+
+        <div class="list-section">
+            <h3>📚 Danh sách mã số sinh viên đã thêm</h3>
+            <table class="student-table">
+                <thead>
+                    <tr>
+                        <th>Mã số sinh viên</th>
+                        <th>Họ tên</th>
+                    </tr>
+                </thead>
+                <tbody id="student-list">
+                    <!-- Dữ liệu sẽ được thêm ở đây bằng JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+
+<script type="module" src="/js/muster.js"></script>
+<script type="module" src="/js/barcode-cam.js"></script>
+
+</html>
