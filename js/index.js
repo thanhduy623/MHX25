@@ -26,7 +26,7 @@ import { fetchGoogleSheet } from './connect.js';
             const eventHTML = `
                 <div class="event-card">
                     <div class="event-image">
-                        <img src="/image/logo_MHX.png" alt="Hình sự kiện">
+                        <img src="./image/logo_MHX.png" alt="Hình sự kiện">
                     </div>
                     <div class="event-info">
                         <div class="event-name">🎉 ${nameEvent}</div>
