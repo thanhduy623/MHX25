@@ -1,5 +1,3 @@
-import { Html5Qrcode } from "html5-qrcode";
-
 /**
  * Initializes and starts the barcode scanner using the camera.
  * @param {function(string): void} onScanSuccess - Callback when a barcode is successfully scanned, receiving the code as a string.
