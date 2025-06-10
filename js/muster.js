@@ -10,11 +10,23 @@ const studentListBody = document.getElementById('student-list');
 const passCodeInput = document.getElementById("pass-code");
 const addBarcodeBtn = document.getElementById('add-barcode-btn');
 
+// Thêm các phần tử DOM cho hộp thoại xác nhận quét
+const scanConfirmDialog = document.getElementById('scan-confirm-dialog');
+const scannedMssvDisplay = document.getElementById('scanned-mssv-display');
+const confirmScanBtn = document.getElementById('confirm-scan-btn');
+const cancelScanBtn = document.getElementById('cancel-scan-btn');
+const scannerStatusDisplay = document.getElementById('scanner-status'); // Để hiển thị trạng thái máy quét
+
 let studentList = [];
 let studentDataMap = {};
 const STORAGE_KEY = 'muster_student_list';
 
 let urlGAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhhPPJtecQ/exec";
+
+// Biến để lưu trữ hàm dừng máy quét
+let stopCurrentScanner = null;
+// Biến để lưu trữ MSSV tạm thời từ quét
+let currentScannedMssv = null;
 
 // Load danh sách sự kiện từ Google Sheet
 async function loadEvents() {
@@ -110,27 +122,69 @@ function addStudent() {
     studentIdInput.value = "";
 }
 
-// Xử lý quét barcode
-function handleBarcodeScan() {
-    startBarcodeScanner((scannedText, stopScanner) => {
+// Hàm bắt đầu quét barcode
+function startScanningProcess() {
+    scannerStatusDisplay.textContent = 'Máy quét đang hoạt động...';
+    stopCurrentScanner = startBarcodeScanner((scannedText, stopScannerCallback) => {
+        // Lưu lại hàm stopScanner để có thể dừng máy quét từ bên ngoài
+        stopCurrentScanner = stopScannerCallback;
+
         const mssv = scannedText.trim();
+        currentScannedMssv = mssv; // Lưu mã đã quét tạm thời
 
-        if (mssv.length !== 8) {
-            alert(`❌ Mã không hợp lệ: "${mssv}"`);
-            return;
+        // Dừng máy quét tạm thời để chờ xác nhận
+        if (stopCurrentScanner) {
+            stopCurrentScanner();
+            stopCurrentScanner = null; // Đặt lại về null để tránh dừng nhầm
+            scannerStatusDisplay.textContent = 'Đã quét: Chờ xác nhận...';
         }
 
-        if (studentList.includes(mssv)) {
-            alert(`⚠️ MSSV ${mssv} đã có trong danh sách.`);
-            return;
-        }
-
-        studentList.push(mssv);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(studentList));
-        renderList();
-        alert(`✅ Đã thêm ${mssv} vào danh sách.`);
-        // Không gọi stopScanner() => tiếp tục quét cho đến khi người dùng bấm đóng
+        // Hiển thị hộp thoại xác nhận
+        scannedMssvDisplay.textContent = mssv;
+        scanConfirmDialog.style.display = 'block';
     });
+}
+
+// Xử lý khi xác nhận MSSV đã quét
+function confirmScannedStudent() {
+    const mssv = currentScannedMssv;
+
+    if (!mssv) {
+        alert('Không có MSSV nào để xác nhận.');
+        return;
+    }
+
+    if (mssv.length !== 8) {
+        alert(`❌ Mã không hợp lệ: "${mssv}"`);
+        // Đóng hộp thoại và tiếp tục quét
+        scanConfirmDialog.style.display = 'none';
+        startScanningProcess();
+        return;
+    }
+
+    if (studentList.includes(mssv)) {
+        alert(`⚠️ MSSV ${mssv} đã có trong danh sách.`);
+        // Đóng hộp thoại và tiếp tục quét
+        scanConfirmDialog.style.display = 'none';
+        startScanningProcess();
+        return;
+    }
+
+    studentList.push(mssv);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(studentList));
+    renderList();
+    alert(`✅ Đã thêm ${mssv} vào danh sách.`);
+
+    // Đóng hộp thoại xác nhận và tiếp tục quét
+    scanConfirmDialog.style.display = 'none';
+    startScanningProcess(); // Tiếp tục quét sau khi xác nhận
+}
+
+// Xử lý khi hủy MSSV đã quét
+function cancelScannedStudent() {
+    currentScannedMssv = null; // Xóa mã đã quét tạm thời
+    scanConfirmDialog.style.display = 'none'; // Đóng hộp thoại
+    startScanningProcess(); // Tiếp tục quét
 }
 
 // Gửi dữ liệu
@@ -211,7 +265,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearBtn.addEventListener("click", clearList);
 
     if (addBarcodeBtn) {
-        addBarcodeBtn.addEventListener("click", handleBarcodeScan);
+        addBarcodeBtn.addEventListener("click", startScanningProcess); // Gọi hàm bắt đầu quét
+    }
+
+    // Xử lý sự kiện cho hộp thoại xác nhận quét
+    if (confirmScanBtn) {
+        confirmScanBtn.addEventListener('click', confirmScannedStudent);
+    }
+    if (cancelScanBtn) {
+        cancelScanBtn.addEventListener('click', cancelScannedStudent);
     }
 
     studentIdInput.addEventListener("keydown", (e) => {
