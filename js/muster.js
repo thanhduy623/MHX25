@@ -52,7 +52,12 @@ function showCustomMessageBox(message, onOk = () => { }) {
  * Saves the student list to local storage.
  */
 function saveStudentList() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(studentList));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(studentList));
+    } catch (error) {
+        console.error("Error saving to local storage:", error);
+        showCustomMessageBox("Không thể lưu danh sách sinh viên vào bộ nhớ cục bộ. Vui lòng kiểm tra trình duyệt của bạn.");
+    }
 }
 
 /**
