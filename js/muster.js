@@ -15,7 +15,6 @@ const barcodeScannerContainer = document.getElementById('barcode-scanner-contain
 const scannedResultDisplay = document.getElementById('scanned-result-display');
 const confirmScanBtn = document.getElementById('confirm-scan-btn');
 const cancelScanBtn = document.getElementById('cancel-scan-btn');
-const closeScannerBtn = document.getElementById('close-scanner-btn'); // Nút đóng scanner
 
 const customMessageBox = document.getElementById('custom-message-box');
 const customMessageText = document.getElementById('custom-message-text');
@@ -25,11 +24,11 @@ const customMessageOkBtn = document.getElementById('custom-message-ok-btn');
 let studentList = [];
 let studentDataMap = {};
 const STORAGE_KEY = 'muster_student_list';
-const URL_GAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhpPPJtecQ/exec";
+const URL_GAS = "https://script.google.com/macros/s/AKfycbzOYCh4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhpPPJtecQ/exec";
 
 // **Scanner State Variables**
 let stopCurrentScannerFunction = null;
-let html5QrCodeInstance = null;
+let html5QrCodeInstance = null; // Đảm bảo khởi tạo là null
 let pendingScannedMssv = null;
 
 // **Helper Functions**
@@ -188,7 +187,7 @@ function startScanningProcess() {
     barcodeScannerContainer.style.display = 'flex';
     scannedResultDisplay.textContent = 'Đang chờ quét...';
     confirmScanBtn.style.display = 'none';
-    cancelScanBtn.textContent = 'Hủy / Tiếp tục quét';
+    cancelScanBtn.textContent = 'Hủy quét'; // Text updated to reflect new behavior
 
     // Initialize the barcode scanner
     const scannerControl = startBarcodeScanner(
@@ -214,7 +213,7 @@ function handleScanSuccess(scannedText) {
     const fullName = studentDataMap[pendingScannedMssv] || "Không rõ tên";
     scannedResultDisplay.textContent = `MSSV: ${pendingScannedMssv} - ${fullName}`;
     confirmScanBtn.style.display = 'inline-block';
-    cancelScanBtn.textContent = 'Hủy (tiếp tục quét)';
+    cancelScanBtn.textContent = 'Hủy (tiếp tục quét)'; // Still offers resume if user cancels this particular scan
 
     if (pendingScannedMssv.length !== 8) {
         showCustomMessageBox(`❌ Mã "${pendingScannedMssv}" không hợp lệ. Vui lòng quét lại.`, () => {
@@ -240,6 +239,10 @@ function handleScanSuccess(scannedText) {
  */
 function handleScanError(error, instance) {
     console.error("Error initializing scanner:", error);
+    // Nếu instance là null do lỗi khởi tạo, hãy gán html5QrCodeInstance = null để tránh lỗi
+    if (instance === null) {
+        html5QrCodeInstance = null;
+    }
     showCustomMessageBox("Không thể khởi động máy quét. Vui lòng kiểm tra quyền truy cập camera.", () => {
         closeScannerFully();
     });
@@ -264,15 +267,15 @@ function confirmScannedStudent() {
 
     scannedResultDisplay.textContent = 'Đang chờ quét...';
     confirmScanBtn.style.display = 'none';
-    cancelScanBtn.textContent = 'Hủy / Tiếp tục quét';
+    cancelScanBtn.textContent = 'Hủy quét'; // Reset text after confirmation
 }
 
 /**
- * Cancels the scanned student and resumes scanning.
+ * Handles the logic for the "Cancel" button.
+ * This function now always closes the scanner modal fully.
  */
-function cancelScannedStudent() {
-    resetScannerState();
-    resumeScanning();
+function handleCancelScansAndClose() {
+    closeScannerFully();
 }
 
 /**
@@ -282,7 +285,7 @@ function resetScannerState() {
     pendingScannedMssv = null;
     scannedResultDisplay.textContent = 'Đang chờ quét...';
     confirmScanBtn.style.display = 'none';
-    cancelScanBtn.textContent = 'Hủy / Tiếp tục quét';
+    cancelScanBtn.textContent = 'Hủy quét'; // Ensures the button text is "Hủy quét"
 }
 
 /**
@@ -292,8 +295,6 @@ function resumeScanning() {
     if (html5QrCodeInstance) {
         html5QrCodeInstance.resume();
     } else {
-        // If instance is null, it means scanner was fully stopped or never started,
-        // so we need to re-initialize it.
         startScanningProcess();
     }
 }
@@ -302,27 +303,29 @@ function resumeScanning() {
  * Stops the scanner.
  */
 function stopScanner() {
-    if (html5QrCodeInstance && html5QrCodeInstance.isScanning()) {
+    // Chỉ cố gắng gọi .isScanning() nếu html5QrCodeInstance tồn tại và có phương thức đó
+    if (html5QrCodeInstance && typeof html5QrCodeInstance.isScanning === 'function' && html5QrCodeInstance.isScanning()) {
         html5QrCodeInstance.stop().then(() => {
             console.log("Scanner stopped successfully.");
         }).catch((err) => {
             console.warn("Error stopping scanner:", err);
         }).finally(() => {
-            // Always reset variables after attempting to stop
+            // Luôn đặt lại các biến trạng thái sau khi cố gắng dừng
             stopCurrentScannerFunction = null;
             html5QrCodeInstance = null;
             const viewportElement = document.getElementById("barcode-scanner-viewport");
             if (viewportElement) {
-                viewportElement.innerHTML = ''; // Clear the camera feed
+                viewportElement.innerHTML = '';
             }
         });
     } else {
-        // If scanner is not scanning or instance is null, just reset variables.
+        // Nếu không có instance đang hoạt động hoặc không phải là hàm, chỉ cần đặt lại trạng thái
+        console.log("Scanner was not active or not properly initialized when stopScanner was called.");
         stopCurrentScannerFunction = null;
         html5QrCodeInstance = null;
         const viewportElement = document.getElementById("barcode-scanner-viewport");
         if (viewportElement) {
-            viewportElement.innerHTML = ''; // Clear the camera feed
+            viewportElement.innerHTML = '';
         }
     }
 }
@@ -331,9 +334,9 @@ function stopScanner() {
  * Closes the scanner completely.
  */
 function closeScannerFully() {
-    stopScanner(); // Ensures the camera is turned off and resources are released
-    barcodeScannerContainer.style.display = 'none'; // Hides the scanner modal
-    resetScannerState(); // Resets display messages and pending MSSV
+    stopScanner();
+    barcodeScannerContainer.style.display = 'none';
+    resetScannerState();
 }
 
 // **Data Submission Functions**
@@ -360,7 +363,6 @@ async function submitList() {
         return;
     }
 
-    // Stop scanner before submission to avoid conflicts/distractions
     stopScanner();
 
     const success = await sendDataToSheet(studentList, selectedEvent, passcode);
@@ -381,9 +383,6 @@ async function submitList() {
  */
 async function sendDataToSheet(studentList, eventName, passcode) {
     try {
-        // Note: 'no-cors' prevents reading the actual response from Apps Script.
-        // If you need to read responses (e.g., for error messages from GAS),
-        // you'll need to configure CORS on your Apps Script side.
         const response = await fetch(
             URL_GAS,
             {
@@ -400,8 +399,6 @@ async function sendDataToSheet(studentList, eventName, passcode) {
             }
         );
 
-        // Since mode is 'no-cors', we cannot inspect `response.ok` or `response.status`.
-        // We assume success here unless a network error occurs.
         showCustomMessageBox("✅ Yêu cầu gửi dữ liệu đã được thực hiện.", () => { });
         return true;
 
@@ -422,32 +419,28 @@ function clearList() {
         studentList = [];
         localStorage.removeItem(STORAGE_KEY);
         renderList();
-        stopScanner(); // Stop scanner if list is cleared while it's open
+        stopScanner();
     }
 }
 
 // **Event Listeners**
 document.addEventListener("DOMContentLoaded", async () => {
-    // Load initial data
     await loadEvents();
     await loadStudentData();
     loadLocalList();
 
-    // Attach event listeners to UI elements
     addBtn.addEventListener("click", addStudent);
     submitBtn.addEventListener("click", submitList);
     clearBtn.addEventListener("click", clearList);
-    addBarcodeBtn.addEventListener("click", startScanningProcess); // Nút "➕ Quét mã vạch"
+    addBarcodeBtn.addEventListener("click", startScanningProcess);
 
-    // Barcode scanner modal buttons
     confirmScanBtn.addEventListener("click", confirmScannedStudent);
-    cancelScanBtn.addEventListener("click", cancelScannedStudent);
-    closeScannerBtn.addEventListener("click", closeScannerFully); // Nút "X" để đóng hoàn toàn
+    // Changed listener for cancelScanBtn to always close the scanner
+    cancelScanBtn.addEventListener("click", handleCancelScansAndClose);
 
-    // Allow adding student by pressing Enter in the MSSV input field
     studentIdInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
-            e.preventDefault(); // Prevent default form submission
+            e.preventDefault();
             addStudent();
         }
     });
