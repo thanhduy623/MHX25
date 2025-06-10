@@ -1,4 +1,4 @@
-import { fetchGoogleSheet } from "./connect.js";
+import { fetchGoogleSheet } from "../connect.js";
 
 const studentIdInput = document.getElementById("student-id");
 const searchBtn = document.getElementById("search-btn");
