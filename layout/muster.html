@@ -56,144 +56,27 @@
         </div>
     </div>
 
-    <div id="barcode-scanner-container" style="
-    display: none; /* Ẩn theo mặc định */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8); /* Nền tối mờ */
-    z-index: 999;
-    display: flex; /* Dùng flexbox để căn giữa nội dung */
-    justify-content: center;
-    align-items: center;
-    padding: 20px; /* Thêm padding tổng thể cho không gian */
-">
-    <div style="
-        background-color: white;
-        padding: 30px; /* Tăng padding */
-        border-radius: 12px; /* Bo tròn góc hơn */
-        text-align: center;
-        min-width: 300px;
-        max-width: 500px; /* Giới hạn chiều rộng tối đa */
-        width: 100%; /* Đảm bảo nó chiếm đủ không gian trên màn hình nhỏ */
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Thêm đổ bóng */
-        position: relative;
-        box-sizing: border-box; /* Đảm bảo padding không làm tăng kích thước tổng thể */
-    ">
-        <h3 style="
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 1.8em;
-        ">Quét Mã Sinh Viên</h3>
-        <div id="barcode-scanner-viewport" style="
-            width: 100%;
-            max-width: 300px; /* Điều chỉnh kích thước viewport */
-            height: 250px; /* Điều chỉnh chiều cao viewport */
-            margin: 20px auto;
-            border: 2px solid #007bff; /* Viền nổi bật hơn */
-            border-radius: 8px; /* Bo tròn viền */
-            overflow: hidden;
-            background-color: #f0f0f0; /* Nền nhẹ khi chưa tải cam */
-        "></div>
-        <p id="scanned-result-display" style="
-            font-size: 1.3em;
-            font-weight: bold;
-            margin-top: 25px;
-            margin-bottom: 25px;
-            min-height: 1.5em;
-            color: #555;
-        ">Đang chờ quét...</p>
-        <div style="
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px; /* Khoảng cách giữa các nút */
-        ">
-            <button id="confirm-scan-btn" style="
-                display: none; /* Ẩn theo mặc định */
-                padding: 12px 25px;
-                background-color: #28a745; /* Màu xanh lá cây */
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 1em;
-                transition: background-color 0.2s ease;
-            ">Xác nhận</button>
-            <button id="cancel-scan-btn" style="
-                padding: 12px 25px;
-                background-color: #dc3545; /* Màu đỏ */
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 1em;
-                transition: background-color 0.2s ease;
-            ">Hủy / Tiếp tục quét</button>
+    <div id="barcode-scanner-container">
+        <div>
+            <h3>Quét Mã Sinh Viên</h3>
+            <div id="barcode-scanner-viewport"></div>
+            <p id="scanned-result-display">Đang chờ quét...</p>
+            <div class="button-group">
+                <button id="confirm-scan-btn">Xác nhận</button>
+                <button id="cancel-scan-btn">Hủy quyét</button>
+            </div>
         </div>
-        <button id="close-scanner-btn" style="
-            position: absolute;
-            top: 5px; /* Điều chỉnh lại vị trí */
-            right: 10px; /* Điều chỉnh lại vị trí */
-            background: none;
-            border: none;
-            font-size: 2em; /* Kích thước lớn hơn */
-            cursor: pointer;
-            color: #888;
-            line-height: 1; /* Căn chỉnh nút X */
-            padding: 5px; /* Thêm padding để dễ click hơn và tránh overlap */
-            transition: color 0.2s ease;
-        " onmouseover="this.style.color='#333'" onmouseout="this.style.color='#888'">&times;</button>
     </div>
-</div>
 
-<div id="custom-message-box" style="
-    display: none; /* Ẩn theo mặc định */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Nền tối mờ */
-    z-index: 1001;
-    display: flex; /* Dùng flexbox để căn giữa nội dung */
-    justify-content: center;
-    align-items: center;
-    padding: 20px; /* Thêm padding tổng thể */
-">
-    <div style="
-        background-color: white;
-        padding: 30px; /* Tăng padding */
-        border-radius: 12px; /* Bo tròn góc hơn */
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Thêm đổ bóng */
-        max-width: 400px; /* Giới hạn chiều rộng tối đa */
-        width: 100%; /* Đảm bảo nó chiếm đủ không gian trên màn hình nhỏ */
-        box-sizing: border-box;
-    ">
-        <p id="custom-message-text" style="
-            font-size: 1.2em;
-            margin-bottom: 25px;
-            color: #333;
-            line-height: 1.5;
-        "></p>
-        <button id="custom-message-ok-btn" style="
-            padding: 12px 30px;
-            background-color: #007bff; /* Màu xanh dương */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.2s ease;
-        ">OK</button>
+    <div id="custom-message-box">
+        <div>
+            <p id="custom-message-text"></p>
+            <button id="custom-message-ok-btn">OK</button>
+        </div>
     </div>
-</div>
 
-    <script type="module" src="../js/connect.js"></script> <script type="module" src="../js/muster.js"></script>
+    <script type="module" src="../js/connect.js"></script>
+    <script type="module" src="../js/muster.js"></script>
     <script type="module" src="../js/barcode-cam.js"></script>
 
 </body>
