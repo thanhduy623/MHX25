@@ -15,7 +15,7 @@ const barcodeScannerContainer = document.getElementById('barcode-scanner-contain
 const scannedResultDisplay = document.getElementById('scanned-result-display');
 const confirmScanBtn = document.getElementById('confirm-scan-btn');
 const cancelScanBtn = document.getElementById('cancel-scan-btn');
-const closeScannerBtn = document.getElementById('close-scanner-btn');
+const closeScannerBtn = document.getElementById('close-scanner-btn'); // Nút đóng scanner
 
 const customMessageBox = document.getElementById('custom-message-box');
 const customMessageText = document.getElementById('custom-message-text');
@@ -292,6 +292,8 @@ function resumeScanning() {
     if (html5QrCodeInstance) {
         html5QrCodeInstance.resume();
     } else {
+        // If instance is null, it means scanner was fully stopped or never started,
+        // so we need to re-initialize it.
         startScanningProcess();
     }
 }
@@ -300,10 +302,28 @@ function resumeScanning() {
  * Stops the scanner.
  */
 function stopScanner() {
-    if (stopCurrentScannerFunction) {
-        stopCurrentScannerFunction();
+    if (html5QrCodeInstance && html5QrCodeInstance.isScanning()) {
+        html5QrCodeInstance.stop().then(() => {
+            console.log("Scanner stopped successfully.");
+        }).catch((err) => {
+            console.warn("Error stopping scanner:", err);
+        }).finally(() => {
+            // Always reset variables after attempting to stop
+            stopCurrentScannerFunction = null;
+            html5QrCodeInstance = null;
+            const viewportElement = document.getElementById("barcode-scanner-viewport");
+            if (viewportElement) {
+                viewportElement.innerHTML = ''; // Clear the camera feed
+            }
+        });
+    } else {
+        // If scanner is not scanning or instance is null, just reset variables.
         stopCurrentScannerFunction = null;
         html5QrCodeInstance = null;
+        const viewportElement = document.getElementById("barcode-scanner-viewport");
+        if (viewportElement) {
+            viewportElement.innerHTML = ''; // Clear the camera feed
+        }
     }
 }
 
@@ -311,9 +331,9 @@ function stopScanner() {
  * Closes the scanner completely.
  */
 function closeScannerFully() {
-    stopScanner();
-    barcodeScannerContainer.style.display = 'none';
-    resetScannerState();
+    stopScanner(); // Ensures the camera is turned off and resources are released
+    barcodeScannerContainer.style.display = 'none'; // Hides the scanner modal
+    resetScannerState(); // Resets display messages and pending MSSV
 }
 
 // **Data Submission Functions**
@@ -340,6 +360,7 @@ async function submitList() {
         return;
     }
 
+    // Stop scanner before submission to avoid conflicts/distractions
     stopScanner();
 
     const success = await sendDataToSheet(studentList, selectedEvent, passcode);
@@ -360,6 +381,9 @@ async function submitList() {
  */
 async function sendDataToSheet(studentList, eventName, passcode) {
     try {
+        // Note: 'no-cors' prevents reading the actual response from Apps Script.
+        // If you need to read responses (e.g., for error messages from GAS),
+        // you'll need to configure CORS on your Apps Script side.
         const response = await fetch(
             URL_GAS,
             {
@@ -372,10 +396,12 @@ async function sendDataToSheet(studentList, eventName, passcode) {
                     eventName: eventName,
                     passcode: passcode,
                 }),
-                mode: 'no-cors' // Note: 'no-cors' will prevent you from reading error responses from Apps Script
+                mode: 'no-cors'
             }
         );
 
+        // Since mode is 'no-cors', we cannot inspect `response.ok` or `response.status`.
+        // We assume success here unless a network error occurs.
         showCustomMessageBox("✅ Yêu cầu gửi dữ liệu đã được thực hiện.", () => { });
         return true;
 
@@ -396,28 +422,32 @@ function clearList() {
         studentList = [];
         localStorage.removeItem(STORAGE_KEY);
         renderList();
-        stopScanner();
+        stopScanner(); // Stop scanner if list is cleared while it's open
     }
 }
 
 // **Event Listeners**
 document.addEventListener("DOMContentLoaded", async () => {
+    // Load initial data
     await loadEvents();
     await loadStudentData();
     loadLocalList();
 
+    // Attach event listeners to UI elements
     addBtn.addEventListener("click", addStudent);
     submitBtn.addEventListener("click", submitList);
     clearBtn.addEventListener("click", clearList);
-    addBarcodeBtn.addEventListener("click", startScanningProcess);
+    addBarcodeBtn.addEventListener("click", startScanningProcess); // Nút "➕ Quét mã vạch"
 
+    // Barcode scanner modal buttons
     confirmScanBtn.addEventListener("click", confirmScannedStudent);
     cancelScanBtn.addEventListener("click", cancelScannedStudent);
-    closeScannerBtn.addEventListener("click", closeScannerFully);
+    closeScannerBtn.addEventListener("click", closeScannerFully); // Nút "X" để đóng hoàn toàn
 
+    // Allow adding student by pressing Enter in the MSSV input field
     studentIdInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
-            e.preventDefault();
+            e.preventDefault(); // Prevent default form submission
             addStudent();
         }
     });
