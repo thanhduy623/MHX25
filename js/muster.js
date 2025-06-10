@@ -1,4 +1,5 @@
 import { fetchGoogleSheet } from './connect.js';
+import { startBarcodeScanner } from './barcode-cam.js';
 
 const eventSelect = document.getElementById('event-select');
 const studentIdInput = document.getElementById('student-id');
@@ -7,12 +8,13 @@ const submitBtn = document.getElementById('submit-btn');
 const clearBtn = document.getElementById('clear-btn');
 const studentListBody = document.getElementById('student-list');
 const passCodeInput = document.getElementById("pass-code");
+const addBarcodeBtn = document.getElementById('add-barcode-btn');
 
 let studentList = [];
 let studentDataMap = {};
-let urlGAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhhPPJtecQ/exec"
-
 const STORAGE_KEY = 'muster_student_list';
+
+let urlGAS = "https://script.google.com/macros/s/AKfycbzOYChN4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhhPPJtecQ/exec";
 
 // Load danh sách sự kiện từ Google Sheet
 async function loadEvents() {
@@ -54,7 +56,6 @@ async function loadStudentData() {
     }
 }
 
-
 // Load danh sách từ localStorage (nếu có)
 function loadLocalList() {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -68,7 +69,7 @@ function loadLocalList() {
 function renderList() {
     studentListBody.innerHTML = "";
     studentList.forEach(mssv => {
-        const trimmedMSSV = String(mssv).trim(); // Đảm bảo MSSV được chuẩn hóa
+        const trimmedMSSV = String(mssv).trim();
         const fullName = studentDataMap[trimmedMSSV] || "Không rõ";
 
         const row = document.createElement("tr");
@@ -83,7 +84,6 @@ function renderList() {
         studentListBody.appendChild(row);
     });
 }
-
 
 // Thêm MSSV vào danh sách
 function addStudent() {
@@ -110,7 +110,30 @@ function addStudent() {
     studentIdInput.value = "";
 }
 
-// Gửi dữ liệu (alert demo)
+// Xử lý quét barcode
+function handleBarcodeScan() {
+    startBarcodeScanner((scannedText, stopScanner) => {
+        const mssv = scannedText.trim();
+
+        if (mssv.length !== 8) {
+            alert(`❌ Mã không hợp lệ: "${mssv}"`);
+            return;
+        }
+
+        if (studentList.includes(mssv)) {
+            alert(`⚠️ MSSV ${mssv} đã có trong danh sách.`);
+            return;
+        }
+
+        studentList.push(mssv);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(studentList));
+        renderList();
+        alert(`✅ Đã thêm ${mssv} vào danh sách.`);
+        // Không gọi stopScanner() => tiếp tục quét cho đến khi người dùng bấm đóng
+    });
+}
+
+// Gửi dữ liệu
 async function submitList() {
     const selectedEvent = eventSelect.value;
     const passcode = passCodeInput.value;
@@ -139,10 +162,11 @@ async function submitList() {
     }
 }
 
+// Gửi dữ liệu lên Google Sheet thông qua Apps Script
 async function sendDataToSheet(studentList, eventName, passcode) {
     try {
         const response = await fetch(
-            urlGAS, // URL Google Apps Script Web App của bạn
+            urlGAS,
             {
                 method: "POST",
                 headers: {
@@ -157,18 +181,15 @@ async function sendDataToSheet(studentList, eventName, passcode) {
             }
         );
 
-        alert("Yêu cầu gửi dữ liệu đã được thực hiện. Dữ liệu có thể đã được ghi.");
-        console.log("Response object in no-cors mode:", response);
-
+        alert("✅ Yêu cầu gửi dữ liệu đã được thực hiện.");
         return true;
 
     } catch (err) {
-        console.error("Lỗi gửi dữ liệu (do no-cors):", err);
-        alert("Không thể gửi dữ liệu. Vui lòng kiểm tra kết nối mạng.");
+        console.error("Lỗi gửi dữ liệu:", err);
+        alert("❌ Không thể gửi dữ liệu. Vui lòng kiểm tra kết nối.");
         return false;
     }
 }
-
 
 // Xóa danh sách
 function clearList() {
@@ -179,7 +200,7 @@ function clearList() {
     }
 }
 
-// Gán sự kiện
+// Gán sự kiện sau khi DOM đã sẵn sàng
 document.addEventListener("DOMContentLoaded", async () => {
     await loadEvents();
     await loadStudentData();
@@ -189,7 +210,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     submitBtn.addEventListener("click", submitList);
     clearBtn.addEventListener("click", clearList);
 
-    // Thêm bằng nút Enter
+    if (addBarcodeBtn) {
+        addBarcodeBtn.addEventListener("click", handleBarcodeScan);
+    }
+
     studentIdInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
