@@ -135,24 +135,18 @@
             ">Hủy / Tiếp tục quét</button>
         </div>
         <button id="close-scanner-btn" style="
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 2em;
-    cursor: pointer;
-    color: #aaa;
-    padding: 0;
-    height: 32px;
-    width: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    transition: color 0.2s ease;
-">&times;</button>
-
+            position: absolute;
+            top: 5px; /* Điều chỉnh lại vị trí */
+            right: 10px; /* Điều chỉnh lại vị trí */
+            background: none;
+            border: none;
+            font-size: 2em; /* Kích thước lớn hơn */
+            cursor: pointer;
+            color: #888;
+            line-height: 1; /* Căn chỉnh nút X */
+            padding: 5px; /* Thêm padding để dễ click hơn và tránh overlap */
+            transition: color 0.2s ease;
+        " onmouseover="this.style.color='#333'" onmouseout="this.style.color='#888'">&times;</button>
     </div>
 </div>
 
