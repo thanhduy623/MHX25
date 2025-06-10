@@ -6,38 +6,36 @@
  */
 export function startBarcodeScanner(onScanSuccess, onError) {
     const scannerViewportId = "barcode-scanner-viewport";
-    let html5QrCode = null; // Khởi tạo là null
+    let html5QrCode = null;
 
     const viewportElement = document.getElementById(scannerViewportId);
     if (!viewportElement) {
         const errorMessage = `HTML element with ID "${scannerViewportId}" not found.`;
         console.error(`Error: ${errorMessage}`);
-        onError(new Error(errorMessage), null); // Truyền null làm instance nếu không tìm thấy viewport
-        return { stop: () => { }, instance: null };
+        onError(new Error(errorMessage), null);
+        return { stop: () => {}, instance: null };
     }
 
     viewportElement.innerHTML = '';
 
     try {
-        // Đảm bảo Html5Qrcode đã được tải toàn cục từ script CDN
         if (typeof Html5Qrcode === 'undefined') {
             throw new Error("Thư viện Html5Qrcode chưa được tải. Vui lòng kiểm tra thẻ script của bạn.");
         }
         html5QrCode = new Html5Qrcode(scannerViewportId);
     } catch (e) {
         console.error("Không thể tạo instance Html5Qrcode:", e);
-        onError(e, null); // Truyền null làm instance nếu việc tạo đối tượng Html5Qrcode thất bại
-        return { stop: () => { }, instance: null };
+        onError(e, null);
+        return { stop: () => {}, instance: null };
     }
-
 
     const config = {
         fps: 10,
-        qrbox: { width: 250, height: 250 }
+        qrbox: { width: 300, height: 300 },
+        disableFlip: false // ✅ Cho phép thư viện tự xoay ảnh để xử lý lật/mirror
     };
 
     const stopScanner = () => {
-        // Chỉ cố gắng gọi .isScanning() nếu html5QrCode tồn tại và có phương thức đó
         if (html5QrCode && typeof html5QrCode.isScanning === 'function' && html5QrCode.isScanning()) {
             html5QrCode.stop().then(() => {
                 console.log("Scanner stopped.");
@@ -48,7 +46,7 @@ export function startBarcodeScanner(onScanSuccess, onError) {
             });
         } else {
             console.log("Không có instance Html5Qrcode hoạt động nào để dừng trong barcode-cam.js.");
-            viewportElement.innerHTML = ''; // Đảm bảo viewport được xóa ngay cả khi không có máy quét đang hoạt động
+            viewportElement.innerHTML = '';
         }
     };
 
