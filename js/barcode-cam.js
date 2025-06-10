@@ -1,62 +1,60 @@
-// barcode-cam.js
 import { Html5Qrcode } from "html5-qrcode";
 
 /**
- * Khởi tạo và bắt đầu quét mã vạch bằng camera.
- * @param {function(string): void} onScanSuccess - Callback khi quét thành công, nhận về chuỗi mã.
- * @param {function(Error, Html5Qrcode): void} onError - Callback khi có lỗi khởi tạo camera, nhận về lỗi và instance.
- * @returns {{stop: function(): void, instance: Html5Qrcode}} Một object chứa hàm để dừng máy quét và instance của Html5Qrcode.
+ * Initializes and starts the barcode scanner using the camera.
+ * @param {function(string): void} onScanSuccess - Callback when a barcode is successfully scanned, receiving the code as a string.
+ * @param {function(Error, Html5Qrcode): void} onError - Callback for camera initialization errors, receiving the error and the Html5Qrcode instance.
+ * @returns {{stop: function(): void, instance: Html5Qrcode}} An object containing a function to stop the scanner and the Html5Qrcode instance.
  */
 export function startBarcodeScanner(onScanSuccess, onError) {
-    const scannerViewportId = "barcode-scanner-viewport"; // ID của div bạn muốn hiển thị camera
+    const scannerViewportId = "barcode-scanner-viewport"; // ID of the div where the camera will be displayed
     let html5QrCode = null;
 
     const viewportElement = document.getElementById(scannerViewportId);
     if (!viewportElement) {
-        console.error(`Lỗi: Không tìm thấy phần tử HTML có ID "${scannerViewportId}" để hiển thị camera.`);
-        if (onError) onError(new Error(`HTML element with ID "${scannerViewportId}" not found.`), null);
-        return { stop: () => {}, instance: null };
+        const errorMessage = `HTML element with ID "${scannerViewportId}" not found.`;
+        console.error(`Error: ${errorMessage}`);
+        onError(new Error(errorMessage), null);
+        return { stop: () => { }, instance: null };
     }
 
-    // Đảm bảo viewport sạch trước khi khởi tạo
-    viewportElement.innerHTML = ''; 
+    // Ensure the viewport is clear before initializing
+    viewportElement.innerHTML = '';
     html5QrCode = new Html5Qrcode(scannerViewportId);
 
     const config = {
         fps: 10,
-        qrbox: { width: 250, height: 250 } // Kích thước khung quét
+        qrbox: { width: 250, height: 250 } // Size of the scanning box
     };
 
     const stopScanner = () => {
-        // Chỉ dừng máy quét nếu nó đang hoạt động
-        if (html5QrCode && html5QrCode.isScanning()) { // Sử dụng isScanning() để kiểm tra trạng thái
+        if (html5QrCode && html5QrCode.isScanning()) {
             html5QrCode.stop().then(() => {
-                console.log("Máy quét đã dừng.");
-                viewportElement.innerHTML = ''; // Làm sạch viewport sau khi dừng
+                console.log("Scanner stopped.");
+                viewportElement.innerHTML = ''; // Clear the viewport after stopping
             }).catch((err) => {
-                console.warn("Lỗi khi dừng máy quét:", err);
-                viewportElement.innerHTML = ''; // Vẫn cố gắng làm sạch
+                console.warn("Error stopping scanner:", err);
+                viewportElement.innerHTML = ''; // Still attempt to clear
             });
         }
     };
 
     html5QrCode.start(
-        { facingMode: "environment" }, // Ưu tiên camera sau
+        { facingMode: "environment" }, // Prefer the rear camera
         config,
         (decodedText) => {
             onScanSuccess(decodedText);
-            // Sau khi quét thành công, chúng ta không gọi pause ở đây nữa.
-            // Việc tạm dừng/tiếp tục quét sẽ do muster.js điều khiển bằng html5QrCodeInstance.pause() / resume().
+            // The pause/resume of scanning is controlled by muster.js using html5QrCodeInstance.pause() / resume().
         },
         (errorMessage) => {
-            // Log lỗi mà không hiển thị cho người dùng (ví dụ: không tìm thấy QR/barcode)
+            // Log errors without displaying them to the user (e.g., QR/barcode not found)
             // console.warn(`Scan error: ${errorMessage}`);
         }
     ).catch((err) => {
-        console.error("Không thể khởi động camera:", err);
-        if (onError) onError(err, html5QrCode); // Truyền instance khi có lỗi để muster.js có thể xử lý
-        stopScanner(); // Đảm bảo dừng nếu khởi động thất bại
+        console.error("Could not start camera:", err);
+        onError(err, html5QrCode); // Pass the instance when there's an error so muster.js can handle it
+        stopScanner(); // Ensure it stops if startup fails
     });
 
-    return { stop: stopScanner, instance: html5QrCode }; // Trả về cả hàm dừng và instance
+    return { stop: stopScanner, instance: html5QrCode }; // Return both the stop function and the instance
 }
