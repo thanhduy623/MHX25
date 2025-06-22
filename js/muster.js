@@ -24,7 +24,7 @@ const customMessageOkBtn = document.getElementById('custom-message-ok-btn');
 let studentList = [];
 let studentDataMap = {};
 const STORAGE_KEY = 'muster_student_list';
-const URL_GAS = "https://script.google.com/macros/s/AKfycbzOYCh4ziw-dVjc_1I4CCXl-GwSjqXDX0vV1bKeHERB06aiK0hYtSVcvDKuhpPPJtecQ/exec";
+const URL_GAS = "https://script.google.com/macros/s/AKfycbweSKnUjp_KKmbeBF57ITQd4uS1nuebcCQimEjNUy2hXULo5rRUUlp3ga1Q4h1Ig3En/exec";
 
 // **Scanner State Variables**
 let stopCurrentScannerFunction = null;
