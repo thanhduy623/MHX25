@@ -1,6 +1,6 @@
 export function fetchGoogleSheet(sheetName) {
     return new Promise((resolve, reject) => {
-        const sheetId = "1SGEM_7CmuvhLY-WiwoWsCPfw7tub73fUNhKB6oI64s0";
+        const sheetId = "1smT-D3AsLsoMo7_v-qOsoYaflX4ij2U6W1WHkCtBQkg";
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 
         Papa.parse(url, {
